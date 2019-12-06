@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<dataset>
-	<rep_statuses id="0" name="Статус 0" code="0" lang="RU" />
-	<rep_statuses id="1" name="Статус 1" code="1" lang="RU" />
-	<rep_statuses id="2" name="Статус 2" code="2" lang="RU" />
-	<rep_statuses id="3" name="Статус 3" code="3" lang="RU" />
-</dataset>

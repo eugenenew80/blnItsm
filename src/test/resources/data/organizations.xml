@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<dataset>
-	<organizations id="1" name="Ведомство 1" code="01" lang="RU" group_org_code="01" group_report_code="01" />
-	<organizations id="2" name="Ведомство 2" code="02" lang="RU" group_org_code="02" group_report_code="02" />
-	<organizations id="3" name="Ведомство 3" code="03" lang="RU" group_org_code="03" group_report_code="03" />
-</dataset>

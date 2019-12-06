@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<dataset>
-	<regions id="1" name="Регион 1" code="01" reg_type="00" lang="RU" />
-	<regions id="2" name="Регион 2" code="0101" reg_type="01" lang="RU" />
-	<regions id="3" name="Регион 3" code="0102" reg_type="01" lang="RU" />
-	<regions id="4" name="Регион 4" code="010101" reg_type="02" lang="RU" />
-</dataset>

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<dataset>
-	<slices id="1" group_code="001" status_code="0" region = "19" max_rec_num = "9999" start_date = "2019-01-01" end_date = "2019-01-31" created_date = "2019-01-31 23:59:59"  />
-	<slices id="2" group_code="002" status_code="0" region = "19" max_rec_num = "9999" start_date = "2019-01-01" end_date = "2019-01-31" created_date = "2019-01-31 23:59:59"  />
-	<slices id="3" group_code="003" status_code="3" region = "19" max_rec_num = "9999" start_date = "2019-01-01" end_date = "2019-01-31" created_date = "2019-01-31 23:59:59"  />
-</dataset>
