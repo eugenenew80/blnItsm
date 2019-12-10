@@ -1,5 +1,6 @@
-package bln.itsm.schedule;
+package bln.itsm.client.rating;
 
+import bln.itsm.client.ItemValueDto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 

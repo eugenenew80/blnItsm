@@ -5,6 +5,7 @@ import java.util.List;
 
 @Data
 public class RequestCompleteDto {
+    private String id;
     private String requestNumber;
     private String stateCode;
     private String completeCode;

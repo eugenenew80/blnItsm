@@ -38,6 +38,7 @@ public class RequestRestController extends BaseController {
             request.setId(t1.getId());
             request.setCreateDate(t1.getCreateDate());
             request.setLastUpdateDate(now());
+            request.setStatus(BatchStatusEnum.W);
         }
         else {
             request.setStatus(BatchStatusEnum.W);
@@ -57,6 +58,7 @@ public class RequestRestController extends BaseController {
             request.setId(t1.getId());
             request.setCreateDate(t1.getCreateDate());
             request.setLastUpdateDate(now());
+            request.setStatus(BatchStatusEnum.W);
         }
         else {
             request.setStatus(BatchStatusEnum.W);
@@ -77,6 +79,7 @@ public class RequestRestController extends BaseController {
             request.setId(t1.getId());
             request.setCreateDate(t1.getCreateDate());
             request.setLastUpdateDate(now());
+            request.setStatus(BatchStatusEnum.W);
         }
         else {
             request.setStatus(BatchStatusEnum.W);

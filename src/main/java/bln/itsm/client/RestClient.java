@@ -1,6 +1,10 @@
 package bln.itsm.client;
 
-import bln.itsm.schedule.*;
+import bln.itsm.client.login.LoginRequestDto;
+import bln.itsm.client.login.LoginResponseDto;
+import bln.itsm.client.query.QueryRequestDto;
+import bln.itsm.client.query.QueryResponseDto;
+import bln.itsm.client.rating.RatingRequestDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -44,24 +48,6 @@ public class RestClient {
         );
 
         return queryResponse;
-    }
-
-    public void rating(String user, String password, RatingRequestDto ratingDto) {
-        ResponseEntity<LoginResponseDto> loginResponse = login(user, password);
-
-        logger.info(ratingDto.toString());
-
-        RestTemplate queryRestTemplate = new RestTemplateBuilder().build();
-        String queryUrl = "http://itsm-app-2.corp.kegoc.kz/0/dataservice/json/reply/InsertQuery";
-        ResponseEntity<String> queryResponse = queryRestTemplate.exchange(
-            queryUrl,
-            HttpMethod.POST,
-            new HttpEntity<>(ratingDto, headers(loginResponse)),
-            String.class
-        );
-
-        logger.info("status:" + queryResponse.getStatusCodeValue());
-        logger.info("body:" + queryResponse.getBody());
     }
 
 

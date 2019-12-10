@@ -19,6 +19,9 @@ public class Request {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "itsm_service_interface_s")
     private Long id;
 
+    @Column(name = "itsm_id")
+    private String guid;
+
     @Column(name = "request_number")
     private String requestNumber;
 
@@ -38,7 +41,7 @@ public class Request {
     private String suspensionReasonDesc;
 
     @Column(name = "renewal_date")
-    private LocalDate renewalDate;
+    private LocalDateTime renewalDate;
 
     @Column(name="status")
     @Enumerated(EnumType.STRING)

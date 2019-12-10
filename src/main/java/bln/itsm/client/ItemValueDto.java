@@ -1,4 +1,4 @@
-package bln.itsm.schedule;
+package bln.itsm.client;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -8,11 +8,11 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ParameterDto {
+public class ItemValueDto {
 
-    @JsonProperty("DataValueType")
-    private Integer dataValueType;
+    @JsonProperty("ExpressionType")
+    private Integer expressionType;
 
-    @JsonProperty("Value")
-    private String value;
+    @JsonProperty("Parameter")
+    private ParameterDto parameter;
 }

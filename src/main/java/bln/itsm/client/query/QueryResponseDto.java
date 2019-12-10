@@ -1,4 +1,4 @@
-package bln.itsm.schedule;
+package bln.itsm.client.query;
 
 import lombok.Data;
 

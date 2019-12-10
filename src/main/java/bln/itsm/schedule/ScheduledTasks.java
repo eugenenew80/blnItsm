@@ -1,11 +1,19 @@
 package bln.itsm.schedule;
 
+import bln.itsm.client.ItemValueDto;
+import bln.itsm.client.ParameterDto;
+import bln.itsm.client.query.QueryColumnValueDto;
+import bln.itsm.client.query.QueryItemDto;
+import bln.itsm.client.query.QueryRequestDto;
+import bln.itsm.client.query.QueryResponseDto;
+import bln.itsm.client.rating.RatingColumnValueDto;
+import bln.itsm.client.rating.RatingItemDto;
+import bln.itsm.client.rating.RatingRequestDto;
 import bln.itsm.client.RestClient;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,7 +22,7 @@ public class ScheduledTasks {
     private static final Logger logger = LoggerFactory.getLogger(ScheduledTasks.class);
     private final RestClient restClient;
 
-    @Scheduled(cron = "*/15 * * * * *")
+    //@Scheduled(cron = "*/15 * * * * *")
     public void startImport() {
 
         //Формируем объект для передачи

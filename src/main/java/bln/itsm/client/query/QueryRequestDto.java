@@ -1,4 +1,4 @@
-package bln.itsm.schedule;
+package bln.itsm.client.query;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RatingRequestDto {
+public class QueryRequestDto {
+
     @JsonProperty("RootSchemaName")
     private String rootSchemaName;
 
@@ -16,5 +17,5 @@ public class RatingRequestDto {
     private Integer operationType;
 
     @JsonProperty("ColumnValues")
-    private RatingColumnValueDto ColumnValueDto;
+    private QueryColumnValueDto ColumnValueDto;
 }
