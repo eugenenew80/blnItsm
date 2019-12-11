@@ -4,7 +4,6 @@ import bln.itsm.client.login.LoginRequestDto;
 import bln.itsm.client.login.LoginResponseDto;
 import bln.itsm.client.query.QueryRequestDto;
 import bln.itsm.client.query.QueryResponseDto;
-import bln.itsm.client.rating.RatingRequestDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -12,12 +11,11 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-
 @Service
 public class RestClient {
     private static final Logger logger = LoggerFactory.getLogger(RestClient.class);
 
-    private ResponseEntity<LoginResponseDto> login(String user, String password) {
+    public ResponseEntity<LoginResponseDto> login(String user, String password) {
         RestTemplate restTemplate = new RestTemplateBuilder().build();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -35,9 +33,7 @@ public class RestClient {
         return response;
     }
 
-    public  ResponseEntity<QueryResponseDto> request(String user, String password, QueryRequestDto queryDto) {
-        ResponseEntity<LoginResponseDto> loginResponse = login(user, password);
-
+    public  ResponseEntity<QueryResponseDto> request(ResponseEntity<LoginResponseDto> loginResponse, QueryRequestDto queryDto) {
         RestTemplate queryRestTemplate = new RestTemplateBuilder().build();
         String queryUrl = "http://itsm-app-2.corp.kegoc.kz/0/dataservice/json/reply/InsertQuery";
         ResponseEntity<QueryResponseDto> queryResponse = queryRestTemplate.exchange(
