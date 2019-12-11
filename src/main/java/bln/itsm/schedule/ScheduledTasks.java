@@ -7,9 +7,6 @@ import bln.itsm.client.query.QueryColumnValueDto;
 import bln.itsm.client.query.QueryItemDto;
 import bln.itsm.client.query.QueryRequestDto;
 import bln.itsm.client.query.QueryResponseDto;
-import bln.itsm.client.rating.RatingColumnValueDto;
-import bln.itsm.client.rating.RatingItemDto;
-import bln.itsm.client.rating.RatingRequestDto;
 import bln.itsm.client.RestClient;
 import bln.itsm.entity.SupportRequest;
 import bln.itsm.entity.enums.BatchStatusEnum;
@@ -20,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 
 @Component
