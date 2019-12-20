@@ -2,7 +2,6 @@ package bln.itsm.client;
 
 import bln.itsm.client.login.LoginRequestDto;
 import bln.itsm.client.login.LoginResponseDto;
-import bln.itsm.client.query.QueryRequestDto;
 import bln.itsm.client.query.QueryResponseDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +32,13 @@ public class RestClient {
         return response;
     }
 
-    public  ResponseEntity<QueryResponseDto> request(ResponseEntity<LoginResponseDto> loginResponse, QueryRequestDto queryDto) {
+    public  ResponseEntity<QueryResponseDto> request(ResponseEntity<LoginResponseDto> loginResponse, InsertQuery insertQuery) {
         RestTemplate queryRestTemplate = new RestTemplateBuilder().build();
         String queryUrl = "http://itsm-app-2.corp.kegoc.kz/0/dataservice/json/reply/InsertQuery";
         ResponseEntity<QueryResponseDto> queryResponse = queryRestTemplate.exchange(
             queryUrl,
             HttpMethod.POST,
-            new HttpEntity<>(queryDto, headers(loginResponse)),
+            new HttpEntity<>(insertQuery, headers(loginResponse)),
             QueryResponseDto.class
         );
 

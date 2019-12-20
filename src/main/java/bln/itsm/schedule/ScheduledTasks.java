@@ -8,15 +8,23 @@ import bln.itsm.client.query.QueryItemDto;
 import bln.itsm.client.query.QueryRequestDto;
 import bln.itsm.client.query.QueryResponseDto;
 import bln.itsm.client.RestClient;
+import bln.itsm.client.rating.RatingColumnValueDto;
+import bln.itsm.client.rating.RatingItemDto;
+import bln.itsm.client.rating.RatingRequestDto;
 import bln.itsm.entity.SupportRequest;
 import bln.itsm.entity.enums.BatchStatusEnum;
+import bln.itsm.repo.EvaluationRepo;
 import bln.itsm.repo.SupportRequestRepo;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Component
@@ -28,7 +36,10 @@ public class ScheduledTasks {
     private final RestClient restClient;
     private final SupportRequestRepo supportRequestRepo;
 
-    @Scheduled(cron = "*/15 * * * * *")
+    @Autowired
+    private EvaluationRepo evaluationRepo;
+
+//    @Scheduled(cron = "*/15 * * * * *")
     public void startImport() {
 
         //Вызываем метод авторизации в системе ITSM
@@ -80,5 +91,40 @@ public class ScheduledTasks {
 
             supportRequestRepo.save(r);
         }
+
+        /*
+        * send evaluations
+        * */
+        evaluationRepo.findByTransferStatus(BatchStatusEnum.W).forEach(evaluation -> {
+
+            //requestNumber
+            ParameterDto requestNumberParameter = new ParameterDto(1, evaluation.getRequestNumber());
+            ItemValueDto requestNumberItemValue = new ItemValueDto(2, requestNumberParameter);
+
+            //qualityCode
+            ParameterDto qualityCodeParameter = new ParameterDto(1, evaluation.getQualityCode());
+            ItemValueDto qualityCodeItemValue = new ItemValueDto(2, qualityCodeParameter);
+
+            //evalutionDate
+            ParameterDto evalutionDateParameter = new ParameterDto(8,
+                                                        evaluation.getEvaluationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssZ")));
+            ItemValueDto evalutionDateItemValue = new ItemValueDto(2, qualityCodeParameter);
+
+            RatingItemDto item = new RatingItemDto(requestNumberItemValue, qualityCodeItemValue, evalutionDateItemValue);
+            RatingColumnValueDto ratingColumnValueDto = new RatingColumnValueDto(item);
+
+            RatingRequestDto insertQuery =
+                                new RatingRequestDto("INFBISRequest", 1, ratingColumnValueDto);
+
+            //send to itsm
+            ResponseEntity<QueryResponseDto> queryResponse = restClient.request(loginResponse, insertQuery);
+
+            if(queryResponse.getStatusCode() == HttpStatus.OK) {
+                evaluation.setTransferStatus(BatchStatusEnum.C);
+            } else {
+                evaluation.setTransferStatus(BatchStatusEnum.E);
+            }
+
+        });
     }
 }
