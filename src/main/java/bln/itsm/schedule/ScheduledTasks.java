@@ -114,7 +114,7 @@ public class ScheduledTasks {
             RatingColumnValueDto ratingColumnValueDto = new RatingColumnValueDto(item);
 
             RatingRequestDto insertQuery =
-                                new RatingRequestDto("INFBISRequest", 1, ratingColumnValueDto);
+                                new RatingRequestDto("INFBISRating", 1, ratingColumnValueDto);
 
             //send to itsm
             ResponseEntity<QueryResponseDto> queryResponse = restClient.request(loginResponse, insertQuery);
