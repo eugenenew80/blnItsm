@@ -107,7 +107,7 @@ public class ScheduledTasks {
 
             //evalutionDate
             ParameterDto evalutionDateParameter = new ParameterDto(8,
-                                                        evaluation.getEvaluationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssZ")));
+                                                        evaluation.getEvaluationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")));
             ItemValueDto evalutionDateItemValue = new ItemValueDto(2, qualityCodeParameter);
 
             RatingItemDto item = new RatingItemDto(requestNumberItemValue, qualityCodeItemValue, evalutionDateItemValue);
