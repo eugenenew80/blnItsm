@@ -18,9 +18,6 @@ public class Evaluation {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ITSM_EVALUATION_INTERFACE_S")
     private Long id;
 
-    @Column(name = "itsm_id")
-    private String guid;
-
     @Column(name = "request_number")
     private String requestNumber;
 
