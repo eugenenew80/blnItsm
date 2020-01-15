@@ -2,13 +2,17 @@ package bln.itsm.client;
 
 import bln.itsm.client.login.LoginRequestDto;
 import bln.itsm.client.login.LoginResponseDto;
-import bln.itsm.client.query.QueryResponseDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
 
 @Service
 public class RestClient {
@@ -32,19 +36,43 @@ public class RestClient {
         return response;
     }
 
-    public  ResponseEntity<QueryResponseDto> request(ResponseEntity<LoginResponseDto> loginResponse, InsertQuery insertQuery) {
-        RestTemplate queryRestTemplate = new RestTemplateBuilder().build();
+    public  ResponseEntity<String> request(ResponseEntity<LoginResponseDto> loginResponse, InsertQuery insertQuery) {
+        RestTemplate restTemplate = new RestTemplateBuilder().build();
+        restTemplate.setErrorHandler(new MyErrorHandler());
+
         String queryUrl = "http://itsm-app-2.corp.kegoc.kz/0/dataservice/json/reply/InsertQuery";
-        ResponseEntity<QueryResponseDto> queryResponse = queryRestTemplate.exchange(
+
+        HttpHeaders headers = headers(loginResponse);
+        ObjectMapper mapper = new ObjectMapper();
+        String jsonStr = "";
+        try {
+            jsonStr = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(insertQuery);
+            logger.info(jsonStr);
+        }
+        catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        logger.info("---headers---");
+        logger.info(headers.toString());
+        logger.info("");
+        logger.info("---body---");
+        logger.info(jsonStr);
+
+        ResponseEntity<String> queryResponse = restTemplate.exchange(
             queryUrl,
             HttpMethod.POST,
-            new HttpEntity<>(insertQuery, headers(loginResponse)),
-            QueryResponseDto.class
+            new HttpEntity<>(jsonStr, headers),
+            String.class
         );
 
+        logger.info("");
+        logger.info("---status---");
+        logger.info("" + queryResponse.getStatusCodeValue());
+        logger.info("---response---");
+        logger.info(queryResponse.getBody());
         return queryResponse;
     }
-
 
     private HttpHeaders headers(ResponseEntity<LoginResponseDto> loginResponse) {
         //Формируем заголовок запроса
@@ -72,5 +100,16 @@ public class RestClient {
         return queryHeaders;
     }
 
+    public <T> T jsonStringToObject(String jsonString, Class<T> clazz) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            return mapper.readValue(jsonString, clazz);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
 
+        return null;
+    }
 }

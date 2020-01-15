@@ -9,7 +9,5 @@ import javax.transaction.Transactional;
 @Repository
 @Transactional
 public interface RequestRepo extends JpaRepository<Request, Long> {
-
     Request findByRequestNumberAndStatus(String requestNumber, BatchStatusEnum status);
-
 }

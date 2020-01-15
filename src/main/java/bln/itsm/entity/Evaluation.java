@@ -3,19 +3,18 @@ package bln.itsm.entity;
 import bln.itsm.entity.enums.BatchStatusEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(of= {"id"})
 @Entity
-@Table(name = "ITSM_EVALUATION_INTERFACE")
+@Table(name = "itsm_evaluation_interface")
 public class Evaluation {
 
     @Id
-    @SequenceGenerator(name="ITSM_EVALUATION_INTERFACE_S", sequenceName = "ITSM_EVALUATION_INTERFACE_S", allocationSize=1)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ITSM_EVALUATION_INTERFACE_S")
+    @SequenceGenerator(name="itsm_evaluation_interface_s", sequenceName = "itsm_evaluation_interface_s", allocationSize=1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "itsm_evaluation_interface_s")
     private Long id;
 
     @Column(name = "request_number")
@@ -39,5 +38,4 @@ public class Evaluation {
     @Column(name = "transfer_status")
     @Enumerated(EnumType.STRING)
     private BatchStatusEnum transferStatus;
-
 }

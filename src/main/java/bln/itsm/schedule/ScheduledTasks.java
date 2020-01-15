@@ -11,26 +11,20 @@ import bln.itsm.client.RestClient;
 import bln.itsm.client.rating.RatingColumnValueDto;
 import bln.itsm.client.rating.RatingItemDto;
 import bln.itsm.client.rating.RatingRequestDto;
+import bln.itsm.entity.Evaluation;
 import bln.itsm.entity.SupportRequest;
 import bln.itsm.entity.enums.BatchStatusEnum;
 import bln.itsm.repo.EvaluationRepo;
 import bln.itsm.repo.SupportRequestRepo;
+import com.fasterxml.jackson.databind.util.JSONWrappedObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.SqlInOutParameter;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
-import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -38,6 +32,8 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class ScheduledTasks {
+    private static final Logger logger = LoggerFactory.getLogger(ScheduledTasks.class);
+
     private static final String user = "temp40a";
     private static final String password = "Q1w2e3r4t%777";
     private final RestClient restClient;
@@ -46,38 +42,25 @@ public class ScheduledTasks {
     @Autowired
     private EvaluationRepo evaluationRepo;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    private SimpleJdbcCall itsmOutUpdate;
-    private SimpleJdbcCall itsmInUpdate;
-
-    @PostConstruct
-    void init() {
-
-        jdbcTemplate.setResultsMapCaseInsensitive(true);
-
-        itsmOutUpdate = new SimpleJdbcCall(jdbcTemplate)
-                .withCatalogName("sap_interface")
-                .withProcedureName("itsm_out_update");
-        itsmInUpdate = new SimpleJdbcCall(jdbcTemplate)
-                .withCatalogName("sap_interface")
-                .withProcedureName("itsm_in_update");
-    }
-
     @Scheduled(cron = "*/15 * * * * *")
     public void startImport() {
 
         //Вызываем метод авторизации в системе ITSM
+        logger.info("Trying to authorization...");
         ResponseEntity<LoginResponseDto> loginResponse = restClient.login(user, password);
         if (loginResponse.getStatusCodeValue() != 200) {
-            log.error("Ршибка авторизации}");
+            log.error("ERROR!}");
             return;
         }
+        logger.info("OK!");
 
         //Ищем список записей, ожидающих обработки и вызываем метод передачи данных в систему ITSM
         List<SupportRequest> list = supportRequestRepo.findByStatus(BatchStatusEnum.W);
+        if (list.size() > 0)
+            logger.info("Sending itsm requests, count of records: " + list.size());
+
         for (SupportRequest r : list) {
+            logger.info("Sending itsm request: " + r.getId());
 
             ParameterDto descriptionParam = new ParameterDto(1, r.getDescription());
             ParameterDto authorParam = new ParameterDto(1, r.getAuthor());
@@ -101,74 +84,69 @@ public class ScheduledTasks {
             QueryColumnValueDto columnValue = new QueryColumnValueDto(item);
             QueryRequestDto insertQuery = new QueryRequestDto("INFBISRequest", 1, columnValue);
 
+
             //Выводим ответ
             log.info("send " + insertQuery);
-            ResponseEntity<QueryResponseDto> queryResponse = restClient.request(loginResponse, insertQuery);
+            ResponseEntity<String> queryResponse = restClient.request(loginResponse, insertQuery);
+
+            boolean isSuccess = false;
+            String responseBodyStr = queryResponse.getBody();
             if (queryResponse.getStatusCodeValue() == 200) {
-                QueryResponseDto responseBody = queryResponse.getBody();
+                QueryResponseDto responseBody = restClient.jsonStringToObject(responseBodyStr, QueryResponseDto.class);
+                if (responseBody != null) {
+                    logger.info("OK!");
 
-                log.info("status:" + queryResponse.getStatusCodeValue());
-                log.info("body:" + responseBody);
-
-                r.setGuid(responseBody.getId());
-                r.setStatus(BatchStatusEnum.C);
+                    r.setGuid(responseBody.getId());
+                    r.setStatus(BatchStatusEnum.C);
+                    isSuccess = true;
+                }
             }
-            else {
+
+            if (!isSuccess) {
+                logger.error("ERROR: ", responseBodyStr);
                 r.setStatus(BatchStatusEnum.E);
             }
 
             supportRequestRepo.save(r);
         }
 
-        /*
-        * send evaluations
-        * */
-        evaluationRepo.findByTransferStatus(BatchStatusEnum.W).forEach(evaluation -> {
 
-            //requestNumber
-            ParameterDto requestNumberParameter = new ParameterDto(1, evaluation.getRequestNumber());
+        List<Evaluation> listEval = evaluationRepo.findByTransferStatus(BatchStatusEnum.W);
+        if (list.size() > 0)
+            logger.info("Sending ratings, count of records: " + listEval.size());
+
+        for (Evaluation e : listEval) {
+            logger.info("Sending rating: " + e.getRequestNumber());
+
+            String dateStr = e.getEvaluationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"));
+
+            ParameterDto requestNumberParameter = new ParameterDto(1, e.getRequestNumber());
+            ParameterDto qualityCodeParameter = new ParameterDto(1, e.getQualityCode());
+            ParameterDto evaluationDateParameter = new ParameterDto(8, dateStr);
+
             ItemValueDto requestNumberItemValue = new ItemValueDto(2, requestNumberParameter);
-
-            //qualityCode
-            ParameterDto qualityCodeParameter = new ParameterDto(1, evaluation.getQualityCode());
             ItemValueDto qualityCodeItemValue = new ItemValueDto(2, qualityCodeParameter);
+            ItemValueDto evaluationDateItemValue = new ItemValueDto(2, evaluationDateParameter);
 
-            //evalutionDate
-            ParameterDto evalutionDateParameter = new ParameterDto(8,
-                                                        evaluation.getEvaluationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")));
-            ItemValueDto evalutionDateItemValue = new ItemValueDto(2, qualityCodeParameter);
-
-            RatingItemDto item = new RatingItemDto(requestNumberItemValue, qualityCodeItemValue, evalutionDateItemValue);
+            RatingItemDto item = new RatingItemDto(requestNumberItemValue, qualityCodeItemValue, evaluationDateItemValue);
             RatingColumnValueDto ratingColumnValueDto = new RatingColumnValueDto(item);
+            RatingRequestDto insertQuery = new RatingRequestDto("INFBISRating", 1, ratingColumnValueDto);
 
-            RatingRequestDto insertQuery =
-                                new RatingRequestDto("INFBISRating", 1, ratingColumnValueDto);
-
-            //send to itsm
-            log.info("send rating "  + insertQuery);
-            ResponseEntity<QueryResponseDto> queryResponse = restClient.request(loginResponse, insertQuery);
-
-            if(queryResponse.getStatusCode() == HttpStatus.OK) {
-                log.info("response " + queryResponse);
-                evaluation.setTransferStatus(BatchStatusEnum.C);
-            } else {
-                evaluation.setTransferStatus(BatchStatusEnum.E);
+            //Выводим ответ
+            ResponseEntity<String> queryResponse = restClient.request(loginResponse, insertQuery);
+            String responseBodyStr = queryResponse.getBody();
+            boolean isSuccess = false;
+            if (queryResponse.getStatusCodeValue() == 200) {
+                logger.info("OK!");
+                e.setTransferStatus(BatchStatusEnum.C);
+                isSuccess = true;
             }
 
-        });
-
-        SqlParameterSource in = new MapSqlParameterSource()
-                .addValue("p_auto_commit", true);
-
-        /**
-         * run oracle package
-         * */
-//        itsmOutUpdate.execute(new MapSqlParameterSource());
-//        itsmInUpdate.execute(new MapSqlParameterSource());
-
-        jdbcTemplate.execute("call sap_interface.itsm_out_update()");
-        jdbcTemplate.execute("call sap_interface.itsm_in_update()");
-
-
+            if (!isSuccess) {
+                logger.error("ERROR: ", responseBodyStr);
+                e.setTransferStatus(BatchStatusEnum.E);
+            }
+            evaluationRepo.save(e);
+        }
     }
 }

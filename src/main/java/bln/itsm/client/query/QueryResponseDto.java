@@ -1,5 +1,6 @@
 package bln.itsm.client.query;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 @Data
