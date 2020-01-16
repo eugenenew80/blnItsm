@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -45,37 +47,34 @@ public class ScheduledTasks {
         if (list.size() > 0)
             logger.info("Sending requests, count of records: " + list.size());
 
-        for (SupportRequest req : list) {
+        for (SupportRequest req : list)
             sendRequestQuery(req);
-            supportRequestRepo.save(req);
-        }
 
         List<Evaluation> listEval = evaluationRepo.findByTransferStatus(BatchStatusEnum.W);
         if (listEval.size() > 0)
             logger.info("Sending ratings, count of records: " + listEval.size());
 
-        for (Evaluation eval : listEval) {
+        for (Evaluation eval : listEval)
             sendRatingQuery(eval);
-            evaluationRepo.save(eval);
-        }
     }
 
     private void sendRequestQuery(SupportRequest r) {
         logger.info("Sending request query: " + r.getId());
-        QueryRequestDto insertQuery = buildRequestQuery(r);
+        QueryRequestDto insertQuery = r.buildRequestQuery();
 
         //sending request
-        ResponseEntity<String> queryResponse = restClient.request(insertQuery);
+        ResponseEntity<String> response = restClient.request(insertQuery);
 
         boolean isSuccess = false;
-        String responseBodyStr = queryResponse.getBody();
-        if (queryResponse.getStatusCodeValue() == 200) {
+        String responseBodyStr = response.getBody();
+        if (response.getStatusCodeValue() == 200) {
             QueryResponseDto responseBody = restClient.jsonStringToObject(responseBodyStr, QueryResponseDto.class);
             if (responseBody != null) {
                 logger.info("OK!");
 
                 r.setGuid(responseBody.getId());
                 r.setStatus(BatchStatusEnum.C);
+                r.setLastUpdateDate(LocalDateTime.now());
                 isSuccess = true;
             }
         }
@@ -83,73 +82,43 @@ public class ScheduledTasks {
         if (!isSuccess) {
             logger.error("ERROR: ", responseBodyStr);
             r.setStatus(BatchStatusEnum.E);
+            r.setLastUpdateDate(LocalDateTime.now());
         }
+        supportRequestRepo.save(r);
 
-        if (isSuccess && !r.getRequestFiles().isEmpty()) {
-            for (SupportRequestFile rf : r.getRequestFiles()) {
-                logger.info("Sending file: " + rf.getId());
-                ResponseEntity<String> responseBody = restClient.fileUpload(rf);
-            }
+        if (isSuccess && !r.getRequestFiles().isEmpty())
+            sendFiles(r);
+    }
+
+    private void sendFiles(SupportRequest r) {
+        for (SupportRequestFile rf : r.getRequestFiles()) {
+            logger.info("Sending file: " + rf.getId());
+            ResponseEntity<String> response = restClient.fileUpload(rf);
         }
     }
 
     private void sendRatingQuery(Evaluation eval) {
         logger.info("Sending rating query: " + eval.getRequestNumber());
-        RatingRequestDto insertQuery = buildRatingQuery(eval);
+        RatingRequestDto insertQuery = eval.buildRatingQuery();
 
-        //Read response
-        ResponseEntity<String> queryResponse = restClient.request(insertQuery);
-        String responseBodyStr = queryResponse.getBody();
+        //send request
+        ResponseEntity<String> response = restClient.request(insertQuery);
+
+        //read response
+        String responseBody = response.getBody();
         boolean isSuccess = false;
-        if (queryResponse.getStatusCodeValue() == 200) {
+        if (response.getStatusCodeValue() == 200) {
             logger.info("OK!");
             eval.setTransferStatus(BatchStatusEnum.C);
+            eval.setLastUpdateDate(LocalDateTime.now());
             isSuccess = true;
         }
 
         if (!isSuccess) {
-            logger.error("ERROR: ", responseBodyStr);
+            logger.error("ERROR: ", responseBody);
             eval.setTransferStatus(BatchStatusEnum.E);
+            eval.setLastUpdateDate(LocalDateTime.now());
         }
-    }
-
-    private RatingRequestDto buildRatingQuery(Evaluation e) {
-        String dateStr = "\"" + e.getEvaluationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")) + "\"";
-
-        ParameterDto requestNumberParameter = new ParameterDto(1, e.getRequestNumber());
-        ParameterDto qualityCodeParameter = new ParameterDto(1, e.getQualityCode());
-        ParameterDto evaluationDateParameter = new ParameterDto(8, dateStr);
-
-        ItemValueDto requestNumberItemValue = new ItemValueDto(2, requestNumberParameter);
-        ItemValueDto qualityCodeItemValue = new ItemValueDto(2, qualityCodeParameter);
-        ItemValueDto evaluationDateItemValue = new ItemValueDto(2, evaluationDateParameter);
-
-        RatingItemDto item = new RatingItemDto(requestNumberItemValue, qualityCodeItemValue, evaluationDateItemValue);
-        RatingColumnValueDto ratingColumnValueDto = new RatingColumnValueDto(item);
-        return new RatingRequestDto("INFBISRating", 1, ratingColumnValueDto);
-    }
-
-    private QueryRequestDto buildRequestQuery(SupportRequest r) {
-        ParameterDto descriptionParam = new ParameterDto(1, r.getDescription());
-        ParameterDto authorParam = new ParameterDto(1, r.getAuthor());
-        ParameterDto companyParam = new ParameterDto(1, r.getCompany());
-        ParameterDto categoryParam = new ParameterDto(1, r.getCategory());
-        ParameterDto subjectParam = new ParameterDto(1, r.getSubject());
-
-        ItemValueDto descriptionItemValue = new ItemValueDto(2, descriptionParam);
-        ItemValueDto authorItemValue = new ItemValueDto(2, authorParam);
-        ItemValueDto companyItemValue = new ItemValueDto(2, companyParam);
-        ItemValueDto categoryItemValue = new ItemValueDto(2, categoryParam);
-        ItemValueDto subjectItemValue = new ItemValueDto(2, subjectParam);
-        QueryItemDto item = new QueryItemDto();
-
-        item.setDescription(descriptionItemValue);
-        item.setRequestAuthor(authorItemValue);
-        item.setCompany(companyItemValue);
-        item.setCategory(categoryItemValue);
-        item.setSubject(subjectItemValue);
-
-        QueryColumnValueDto columnValue = new QueryColumnValueDto(item);
-        return new QueryRequestDto("INFBISRequest", 1, columnValue);
+        evaluationRepo.save(eval);
     }
 }

@@ -1,22 +1,23 @@
 package bln.itsm.entity;
 
+import bln.itsm.client.ItemValueDto;
+import bln.itsm.client.ParameterDto;
+import bln.itsm.client.query.QueryColumnValueDto;
+import bln.itsm.client.query.QueryItemDto;
+import bln.itsm.client.query.QueryRequestDto;
 import bln.itsm.entity.enums.BatchStatusEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 @Data
 @EqualsAndHashCode(of= {"id"})
 @Entity
 @Table(name = "itsm_support_requests_interface")
 public class SupportRequest {
-
     @Id
-    @SequenceGenerator(name="itsm_support_requests_interface_s", sequenceName = "itsm_support_requests_interface_s", allocationSize=1)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "itsm_support_requests_interface_s")
     private Long id;
 
     @Column(name = "request_author")
@@ -44,12 +45,33 @@ public class SupportRequest {
     @Enumerated(EnumType.STRING)
     private BatchStatusEnum status;
 
-    @Column(name = "create_date")
-    private LocalDateTime createDate;
-
     @Column(name = "last_update_date")
     private LocalDateTime lastUpdateDate;
 
     @OneToMany(mappedBy = "supportRequest")
     private List<SupportRequestFile> requestFiles;
+
+    public QueryRequestDto buildRequestQuery() {
+        ParameterDto descriptionParam = new ParameterDto(1, this.getDescription());
+        ParameterDto authorParam = new ParameterDto(1, this.getAuthor());
+        ParameterDto companyParam = new ParameterDto(1, this.getCompany());
+        ParameterDto categoryParam = new ParameterDto(1, this.getCategory());
+        ParameterDto subjectParam = new ParameterDto(1, this.getSubject());
+
+        ItemValueDto descriptionItemValue = new ItemValueDto(2, descriptionParam);
+        ItemValueDto authorItemValue = new ItemValueDto(2, authorParam);
+        ItemValueDto companyItemValue = new ItemValueDto(2, companyParam);
+        ItemValueDto categoryItemValue = new ItemValueDto(2, categoryParam);
+        ItemValueDto subjectItemValue = new ItemValueDto(2, subjectParam);
+        QueryItemDto item = new QueryItemDto();
+
+        item.setDescription(descriptionItemValue);
+        item.setRequestAuthor(authorItemValue);
+        item.setCompany(companyItemValue);
+        item.setCategory(categoryItemValue);
+        item.setSubject(subjectItemValue);
+
+        QueryColumnValueDto columnValue = new QueryColumnValueDto(item);
+        return new QueryRequestDto("INFBISRequest", 1, columnValue);
+    }
 }

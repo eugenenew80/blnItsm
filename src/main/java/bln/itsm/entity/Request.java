@@ -4,9 +4,7 @@ import bln.itsm.entity.enums.BatchStatusEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import javax.persistence.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @EqualsAndHashCode(of= {"id"})

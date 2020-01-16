@@ -2,7 +2,6 @@ package bln.itsm.entity;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
@@ -27,6 +26,9 @@ public class SupportRequestFile {
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "file_content", columnDefinition = "BLOB")
     private byte[] fileContent;
+
+    @Column(name = "last_update_date")
+    private LocalDateTime lastUpdateDate;
 
     @ManyToOne
     @JoinColumn(name = "request_interface_id")
