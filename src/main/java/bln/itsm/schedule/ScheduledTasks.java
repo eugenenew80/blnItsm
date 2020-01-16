@@ -35,26 +35,20 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ScheduledTasks {
     private static final Logger logger = LoggerFactory.getLogger(ScheduledTasks.class);
-
-    private static final String user = "temp40a";
-    private static final String password = "Q1w2e3r4t%777";
     private final RestClient restClient;
     private final SupportRequestRepo supportRequestRepo;
-
-    @Autowired
-    private EvaluationRepo evaluationRepo;
+    private final EvaluationRepo evaluationRepo;
 
     @Scheduled(cron = "*/15 * * * * *")
     public void startImport() {
         List<SupportRequest> list = supportRequestRepo.findByStatus(BatchStatusEnum.W);
         if (list.size() > 0)
-            logger.info("Sending itsm requests, count of records: " + list.size());
+            logger.info("Sending requests, count of records: " + list.size());
 
         for (SupportRequest req : list) {
             sendRequestQuery(req);
             supportRequestRepo.save(req);
         }
-
 
         List<Evaluation> listEval = evaluationRepo.findByTransferStatus(BatchStatusEnum.W);
         if (listEval.size() > 0)
