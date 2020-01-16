@@ -158,10 +158,14 @@ public class RestClient {
         headers.add("Content-Range", "bytes 0-" + totalLength.toString() + "/" + totalLength);
 
         //body
+        HttpEntity<byte[]> requestEntity = new HttpEntity<>(requestFile.getFileContent(), headers);
+
+        /*
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("filename", fileName);
         body.add("file", new ByteArrayResource(requestFile.getFileContent()));
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        */
 
         //log request
         logger.info("---url---");
