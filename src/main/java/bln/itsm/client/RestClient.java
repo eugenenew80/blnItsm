@@ -75,7 +75,6 @@ public class RestClient {
             return null;
         }
 
-
         //url
         String queryUrl = "http://itsm-app-2.corp.kegoc.kz/0/dataservice/json/reply/InsertQuery";
 
@@ -110,6 +109,8 @@ public class RestClient {
             new HttpEntity<>(jsonStr, headers),
             String.class
         );
+
+
 
         //log response
         logger.info("");
