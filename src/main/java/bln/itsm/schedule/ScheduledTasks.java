@@ -12,7 +12,9 @@ import bln.itsm.client.rating.RatingColumnValueDto;
 import bln.itsm.client.rating.RatingItemDto;
 import bln.itsm.client.rating.RatingRequestDto;
 import bln.itsm.entity.Evaluation;
+import bln.itsm.entity.RequestFile;
 import bln.itsm.entity.SupportRequest;
+import bln.itsm.entity.SupportRequestFile;
 import bln.itsm.entity.enums.BatchStatusEnum;
 import bln.itsm.repo.EvaluationRepo;
 import bln.itsm.repo.SupportRequestRepo;
@@ -107,6 +109,14 @@ public class ScheduledTasks {
                 r.setStatus(BatchStatusEnum.E);
             }
 
+            if (isSuccess && !r.getRequestFiles().isEmpty()) {
+                for (SupportRequestFile rf : r.getRequestFiles()) {
+                    logger.info("Sending file: " + rf.getId());
+                    ResponseEntity<String> responseBody = restClient.fileUpload(loginResponse, rf);
+                    //responseBodyStr = restClient.doRequest(loginResponse, rf);
+                }
+            }
+
             supportRequestRepo.save(r);
         }
 
@@ -117,8 +127,7 @@ public class ScheduledTasks {
 
         for (Evaluation e : listEval) {
             logger.info("Sending rating: " + e.getRequestNumber());
-
-            String dateStr = e.getEvaluationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS"));
+            String dateStr = "\"" + e.getEvaluationDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")) + "\"";
 
             ParameterDto requestNumberParameter = new ParameterDto(1, e.getRequestNumber());
             ParameterDto qualityCodeParameter = new ParameterDto(1, e.getQualityCode());
@@ -148,5 +157,8 @@ public class ScheduledTasks {
             }
             evaluationRepo.save(e);
         }
+
+
+        //restClient.fileUpload(loginResponse, )
     }
 }

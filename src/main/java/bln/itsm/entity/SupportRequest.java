@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
 
 @Data
 @EqualsAndHashCode(of= {"id"})
@@ -47,4 +49,7 @@ public class SupportRequest {
 
     @Column(name = "last_update_date")
     private LocalDateTime lastUpdateDate;
+
+    @OneToMany(mappedBy = "supportRequest")
+    private List<SupportRequestFile> requestFiles;
 }
