@@ -32,14 +32,22 @@ import java.util.UUID;
 @Service
 public class RestClient {
     private static final Logger logger = LoggerFactory.getLogger(RestClient.class);
+    private boolean isLogin = false;
+    private ResponseEntity<LoginResponseDto> loginResponse;
+    private String user = "temp40a";
+    private String password = "Q1w2e3r4t%777";
 
-    public ResponseEntity<LoginResponseDto> login(String user, String password) {
+    private void login() {
+        logger.info("Trying to authorization...");
+        this. isLogin = false;
+        this.loginResponse = null;
+
         RestTemplate restTemplate = new RestTemplateBuilder().build();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         String url = "http://itsm-app-2.corp.kegoc.kz/ServiceModel/AuthService.svc/Login";
-        LoginRequestDto request = new LoginRequestDto("temp40a", "Q1w2e3r4t%777");
+        LoginRequestDto request = new LoginRequestDto(user, password);
 
         ResponseEntity<LoginResponseDto> response = restTemplate.exchange(
             url,
@@ -48,16 +56,33 @@ public class RestClient {
             LoginResponseDto.class
         );
 
-        return response;
+        if (response.getStatusCodeValue() != 200) {
+            logger.error("ERROR!}");
+            return;
+        }
+
+        this. isLogin = true;
+        this.loginResponse = response;
+        logger.info("OK!");
     }
 
-    public  ResponseEntity<String> request(ResponseEntity<LoginResponseDto> loginResponse, InsertQuery insertQuery) {
-        RestTemplate restTemplate = new RestTemplateBuilder().build();
-        restTemplate.setErrorHandler(new MyErrorHandler());
+    public  ResponseEntity<String> request(InsertQuery insertQuery) {
+        if (!isLogin)
+            login();
 
+        if (!isLogin) {
+            logger.error("Sending request cancelled, not authorized");
+            return null;
+        }
+
+
+        //url
         String queryUrl = "http://itsm-app-2.corp.kegoc.kz/0/dataservice/json/reply/InsertQuery";
 
+        //headers
         HttpHeaders headers = headers(loginResponse);
+
+        //body
         ObjectMapper mapper = new ObjectMapper();
         String jsonStr = "";
         try {
@@ -66,43 +91,59 @@ public class RestClient {
         }
         catch (JsonProcessingException e) {
             e.printStackTrace();
+            return null;
         }
 
+        //log request
         logger.info("---headers---");
         logger.info(headers.toString());
         logger.info("");
         logger.info("---body---");
         logger.info(jsonStr);
 
-        ResponseEntity<String> queryResponse = restTemplate.exchange(
+        //send request
+        RestTemplate restTemplate = new RestTemplateBuilder().build();
+        restTemplate.setErrorHandler(new MyErrorHandler());
+        ResponseEntity<String> response = restTemplate.exchange(
             queryUrl,
             HttpMethod.POST,
             new HttpEntity<>(jsonStr, headers),
             String.class
         );
 
+        //log response
         logger.info("");
         logger.info("---status---");
-        logger.info("" + queryResponse.getStatusCodeValue());
+        logger.info("" + response.getStatusCodeValue());
         logger.info("---response---");
-        logger.info(queryResponse.getBody());
-        return queryResponse;
+        logger.info(response.getBody());
+        return response;
     }
 
 
-    public ResponseEntity<String> fileUpload(ResponseEntity<LoginResponseDto> loginResponse, SupportRequestFile requestFile) {
+    public ResponseEntity<String> fileUpload(SupportRequestFile requestFile) {
+        if (!isLogin)
+            login();
+
+        if (!isLogin) {
+            logger.error("Sending request cancelled, not authorized");
+            return null;
+        }
+
         String params = "totalFileLength={totalFileLength}&fileId={fileId}&filename={filename}&parentColumnValue={parentColumnValue}&entitySchemaName={entitySchemaName}&parentColumnName={parentColumnName}&columnName={columnName}";
         String url = "http://itsm-app-2.corp.kegoc.kz/0/rest/FileApiService/Upload?" + params;
 
-        UUID uuid = UUID.randomUUID();
-        String randomUUIDString = uuid.toString();
+        String fileId = UUID.randomUUID().toString();
         Integer totalLength = new Integer(requestFile.getFileContent().length);
+        String fileName = requestFile.getFileName();
+        String requestGuid = requestFile.getSupportRequest().getGuid();
 
+        //URL with params
         Map<String, String> urlParams = new HashMap<>();
         urlParams.put("totalFileLength", totalLength.toString());
-        urlParams.put("fileId", randomUUIDString);
-        urlParams.put("filename", requestFile.getFileName());
-        urlParams.put("parentColumnValue", requestFile.getSupportRequest().getGuid());
+        urlParams.put("fileId", fileId);
+        urlParams.put("filename", fileName);
+        urlParams.put("parentColumnValue", requestGuid);
         urlParams.put("entitySchemaName", "INFBISRequestFile");
         urlParams.put("parentColumnName", "INFBISRequest");
         urlParams.put("columnName", "Data");
@@ -111,16 +152,18 @@ public class RestClient {
             .buildAndExpand(urlParams)
             .toUri();
 
+        //headers
         HttpHeaders headers = headers(loginResponse);
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentType(MediaType.parseMediaType(requestFile.getFileType()));
         headers.add("Content-Range", "bytes 0-" + totalLength.toString() + "/" + totalLength);
-        headers.add("Content-Type", requestFile.getFileType());
 
+        //body
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("filename", requestFile.getFileName());
+        body.add("filename", fileName);
         body.add("file", new ByteArrayResource(requestFile.getFileContent()));
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-
+        //log request
         logger.info("---url---");
         logger.info(uri.toString());
         logger.info("");
@@ -128,10 +171,16 @@ public class RestClient {
         logger.info(headers.toString());
         logger.info("");
 
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+        //send request
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.POST, requestEntity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(
+            uri,
+            HttpMethod.POST,
+            requestEntity,
+            String.class
+        );
 
+        //log response
         logger.info("");
         logger.info("---status---");
         logger.info("" + response.getStatusCodeValue());
@@ -141,7 +190,6 @@ public class RestClient {
     }
 
     private HttpHeaders headers(ResponseEntity<LoginResponseDto> loginResponse) {
-        //Формируем заголовок запроса
         HttpHeaders queryHeaders = new HttpHeaders();
         queryHeaders.setContentType(MediaType.APPLICATION_JSON);
         for (String keyHeader : loginResponse.getHeaders().keySet()) {
@@ -179,6 +227,7 @@ public class RestClient {
         return null;
     }
 
+    /*
     public String doRequest(ResponseEntity<LoginResponseDto> loginResponse, SupportRequestFile requestFile) {
         String method = "POST";
         String params = "totalFileLength={totalFileLength}&fileId={fileId}&filename={filename}&parentColumnValue={parentColumnValue}&entitySchemaName={entitySchemaName}&parentColumnName={parentColumnName}&columnName={columnName}";
@@ -258,7 +307,7 @@ public class RestClient {
         logger.info(responseStr);
         return responseStr;
     }
-
+    */
 }
 
 
