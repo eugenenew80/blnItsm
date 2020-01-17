@@ -31,21 +31,10 @@ public class RequestRestController {
     @PostMapping(value = "/api/v1/itsm/requests/take", produces = "application/json")
     public ResponseEntity<Void> take(@RequestBody RequestTakeDto requestDto) {
         Request request = mapper.map(requestDto, Request.class);
-        Request oldRequest = repo.findByRequestNumberAndStatus(requestDto.getRequestNumber(), BatchStatusEnum.W);
-        if (oldRequest != null) {
-            request.setId(oldRequest.getId());
-            request.setCreateDate(oldRequest.getCreateDate());
-            request.setLastUpdateDate(now());
-            request.setStatus(BatchStatusEnum.W);
-        }
-        else {
-            request.setStatus(BatchStatusEnum.W);
-            request.setCreateDate(now());
-        }
-        request.setIsTransferred(false);
-
+        buildRequest(request);
         saveRequest(request);
         updateStatuses();
+
         return ResponseEntity.ok()
             .build();
     }
@@ -54,21 +43,10 @@ public class RequestRestController {
     @PostMapping(value = "/api/v1/itsm/requests/suspense", produces = "application/json")
     public ResponseEntity<Void> suspense(@RequestBody RequestSuspenseDto requestDto) {
         Request request = mapper.map(requestDto, Request.class);
-        Request oldRequest = repo.findByRequestNumberAndStatus(requestDto.getRequestNumber(), BatchStatusEnum.W);
-        if (oldRequest != null) {
-            request.setId(oldRequest.getId());
-            request.setCreateDate(oldRequest.getCreateDate());
-            request.setLastUpdateDate(now());
-            request.setStatus(BatchStatusEnum.W);
-        }
-        else {
-            request.setStatus(BatchStatusEnum.W);
-            request.setCreateDate(now());
-        }
-        request.setIsTransferred(false);
-
+        buildRequest(request);
         saveRequest(request);
         updateStatuses();
+
         return ResponseEntity.ok()
             .build();
     }
@@ -77,18 +55,7 @@ public class RequestRestController {
     @PostMapping(value = "/api/v1/itsm/requests/complete", produces = "application/json")
     public ResponseEntity<Void> complete(@RequestBody RequestCompleteDto requestDto) {
         Request request = mapper.map(requestDto, Request.class);
-        Request oldRequest = repo.findByRequestNumberAndStatus(requestDto.getRequestNumber(), BatchStatusEnum.W);
-        if (oldRequest != null) {
-            request.setId(oldRequest.getId());
-            request.setCreateDate(oldRequest.getCreateDate());
-            request.setLastUpdateDate(now());
-            request.setStatus(BatchStatusEnum.W);
-        }
-        else {
-            request.setStatus(BatchStatusEnum.W);
-            request.setCreateDate(now());
-        }
-        request.setIsTransferred(false);
+        buildRequest(request);
         saveRequest(request);
 
         //Получаем список файлов
@@ -106,10 +73,24 @@ public class RequestRestController {
             }
         }
         saveFiles(requestFiles);
-
         updateStatuses();
+
         return ResponseEntity.ok()
             .build();
+    }
+
+    private void buildRequest(Request request) {
+        Request oldRequest = repo.findByRequestNumberAndStatus(request.getRequestNumber(), BatchStatusEnum.W);
+        if (oldRequest != null) {
+            request.setId(oldRequest.getId());
+            request.setCreateDate(oldRequest.getCreateDate());
+            request.setLastUpdateDate(now());
+            request.setStatus(BatchStatusEnum.W);
+        } else {
+            request.setStatus(BatchStatusEnum.W);
+            request.setCreateDate(now());
+        }
+        request.setIsTransferred(false);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
