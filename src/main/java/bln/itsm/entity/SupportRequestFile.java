@@ -1,5 +1,6 @@
 package bln.itsm.entity;
 
+import bln.itsm.entity.enums.BatchStatusEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import javax.persistence.*;
@@ -29,6 +30,10 @@ public class SupportRequestFile {
 
     @Column(name = "last_update_date")
     private LocalDateTime lastUpdateDate;
+
+    @Column(name="transferred_to_itsm_state")
+    @Enumerated(EnumType.STRING)
+    private BatchStatusEnum status;
 
     @ManyToOne
     @JoinColumn(name = "request_interface_id")

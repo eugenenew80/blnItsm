@@ -1,5 +1,7 @@
 package bln.itsm.client;
 
+import bln.itsm.client.exc.NotAuthorizedException;
+import bln.itsm.client.exc.SendRequestException;
 import bln.itsm.client.login.LoginRequestDto;
 import bln.itsm.client.login.LoginResponseDto;
 import bln.itsm.entity.SupportRequestFile;
@@ -9,22 +11,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -32,10 +24,16 @@ import java.util.UUID;
 @Service
 public class RestClient {
     private static final Logger logger = LoggerFactory.getLogger(RestClient.class);
+    private static String user = "temp40a";
+    private static String password = "Q1w2e3r4t%777";
+    private static String baseUrl = "http://itsm-app-2.corp.kegoc.kz";
+    private static String loginUrlSeg = "/ServiceModel/AuthService.svc/Login";
+    private static String queryUrlSeg = "/0/dataservice/json/reply/InsertQuery";
+    private static String uploadUrlSeg = "/0/rest/FileApiService/Upload";
+    private static String uploadUrlParams = "?totalFileLength={totalFileLength}&fileId={fileId}&filename={filename}&parentColumnValue={parentColumnValue}&entitySchemaName={entitySchemaName}&parentColumnName={parentColumnName}&columnName={columnName}";
+
     private boolean isLogin = false;
-    private ResponseEntity<LoginResponseDto> loginResponse;
-    private String user = "temp40a";
-    private String password = "Q1w2e3r4t%777";
+    private ResponseEntity<String> loginResponse;
 
     private void login() {
         logger.info("Trying to authorization...");
@@ -46,19 +44,19 @@ public class RestClient {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String url = "http://itsm-app-2.corp.kegoc.kz/ServiceModel/AuthService.svc/Login";
+        String url = baseUrl + loginUrlSeg;
         LoginRequestDto request = new LoginRequestDto(user, password);
 
-        ResponseEntity<LoginResponseDto> response = restTemplate.exchange(
+        ResponseEntity<String> response = restTemplate.exchange(
             url,
             HttpMethod.POST,
             new HttpEntity<>(request, headers),
-            LoginResponseDto.class
+            String.class
         );
 
         if (response.getStatusCodeValue() != 200) {
-            logger.error("ERROR!}");
-            return;
+            logger.error("");
+            throw new NotAuthorizedException(response);
         }
 
         this. isLogin = true;
@@ -67,38 +65,30 @@ public class RestClient {
     }
 
     public  ResponseEntity<String> request(InsertQuery insertQuery) {
-        if (!isLogin)
-            login();
-
-        if (!isLogin) {
-            logger.error("Sending request cancelled, not authorized");
-            return null;
-        }
+        if (!isLogin) login();
 
         //url
-        String queryUrl = "http://itsm-app-2.corp.kegoc.kz/0/dataservice/json/reply/InsertQuery";
+        String queryUrl = baseUrl + queryUrlSeg;
 
         //headers
         HttpHeaders headers = headers(loginResponse);
 
         //body
         ObjectMapper mapper = new ObjectMapper();
-        String jsonStr = "";
+        String jsonStr;
         try {
             jsonStr = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(insertQuery);
-            logger.info(jsonStr);
         }
         catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return null;
+            throw new SendRequestException("Error during serializing query to json string");
         }
 
         //log request
-        logger.info("---headers---");
-        logger.info(headers.toString());
-        logger.info("");
-        logger.info("---body---");
-        logger.info(jsonStr);
+        logger.trace("---headers---");
+        logger.trace(headers.toString());
+        logger.trace("");
+        logger.trace("---body---");
+        logger.trace(jsonStr);
 
         //send request
         RestTemplate restTemplate = new RestTemplateBuilder().build();
@@ -110,29 +100,16 @@ public class RestClient {
             String.class
         );
 
-
-
         //log response
-        logger.info("");
-        logger.info("---status---");
-        logger.info("" + response.getStatusCodeValue());
-        logger.info("---response---");
-        logger.info(response.getBody());
+        logger.trace("status" + response.getStatusCodeValue());
+        logger.trace("response" +response.getBody());
         return response;
     }
 
-
     public ResponseEntity<String> fileUpload(SupportRequestFile requestFile) {
-        if (!isLogin)
-            login();
+        if (!isLogin) login();
 
-        if (!isLogin) {
-            logger.error("Sending request cancelled, not authorized");
-            return null;
-        }
-
-        String params = "totalFileLength={totalFileLength}&fileId={fileId}&filename={filename}&parentColumnValue={parentColumnValue}&entitySchemaName={entitySchemaName}&parentColumnName={parentColumnName}&columnName={columnName}";
-        String url = "http://itsm-app-2.corp.kegoc.kz/0/rest/FileApiService/Upload?" + params;
+        String url = baseUrl + uploadUrlSeg + uploadUrlParams;
 
         String fileId = UUID.randomUUID().toString();
         Integer totalLength = new Integer(requestFile.getFileContent().length);
@@ -161,20 +138,13 @@ public class RestClient {
         //body
         HttpEntity<byte[]> requestEntity = new HttpEntity<>(requestFile.getFileContent(), headers);
 
-        /*
-        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("filename", fileName);
-        body.add("file", new ByteArrayResource(requestFile.getFileContent()));
-        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-        */
-
         //log request
-        logger.info("---url---");
-        logger.info(uri.toString());
-        logger.info("");
-        logger.info("---headers---");
-        logger.info(headers.toString());
-        logger.info("");
+        logger.trace("---url---");
+        logger.trace(uri.toString());
+        logger.trace("");
+        logger.trace("---headers---");
+        logger.trace(headers.toString());
+        logger.trace("");
 
         //send request
         RestTemplate restTemplate = new RestTemplate();
@@ -186,15 +156,12 @@ public class RestClient {
         );
 
         //log response
-        logger.info("");
-        logger.info("---status---");
-        logger.info("" + response.getStatusCodeValue());
-        logger.info("---response---");
-        logger.info(response.getBody());
+        logger.trace("status: " + response.getStatusCodeValue());
+        logger.trace("response:" + response.getBody());
         return response;
     }
 
-    private HttpHeaders headers(ResponseEntity<LoginResponseDto> loginResponse) {
+    private HttpHeaders headers(ResponseEntity<String> loginResponse) {
         HttpHeaders queryHeaders = new HttpHeaders();
         queryHeaders.setContentType(MediaType.APPLICATION_JSON);
         for (String keyHeader : loginResponse.getHeaders().keySet()) {
@@ -226,94 +193,7 @@ public class RestClient {
             return mapper.readValue(jsonString, clazz);
         }
         catch (IOException e) {
-            e.printStackTrace();
+            throw new SendRequestException("Error during de-serializing json string to object");
         }
-
-        return null;
     }
-
-    /*
-    public String doRequest(ResponseEntity<LoginResponseDto> loginResponse, SupportRequestFile requestFile) {
-        String method = "POST";
-        String params = "totalFileLength={totalFileLength}&fileId={fileId}&filename={filename}&parentColumnValue={parentColumnValue}&entitySchemaName={entitySchemaName}&parentColumnName={parentColumnName}&columnName={columnName}";
-        String urlStr = "http://itsm-app-2.corp.kegoc.kz/0/rest/FileApiService/Upload?" + params;
-
-        String randomUUIDString = UUID.randomUUID().toString();
-        Integer totalLength = new Integer(requestFile.getFileContent().length);
-
-        urlStr = urlStr.replace("{totalFileLength}", totalLength.toString());
-        urlStr = urlStr.replace("{fileId}", randomUUIDString);
-        urlStr = urlStr.replace("{filename}", requestFile.getFileName());
-        urlStr = urlStr.replace("{parentColumnValue}", requestFile.getSupportRequest().getGuid());
-        urlStr = urlStr.replace("{entitySchemaName}", "INFBISRequestFile");
-        urlStr = urlStr.replace("{parentColumnName}", "INFBISRequest");
-        urlStr = urlStr.replace("{columnName}", "Data");
-
-        URL url;
-        try {
-            url = new URL(urlStr);
-        }
-        catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-
-        logger.info("doRequest started");
-        logger.info("url: " + urlStr);
-        logger.info("method: " + method);
-
-        StringBuffer response = new StringBuffer();
-        HttpURLConnection con = null;
-        try {
-            con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod(method);
-            con.setUseCaches(false);
-            con.setDoInput(true);
-            con.setDoOutput(true);
-            con.setConnectTimeout(99999999);
-            con.setReadTimeout(99999999);
-
-            HttpHeaders headers = headers(loginResponse);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.add("Content-Range", "bytes 0-" + totalLength.toString() + "/" + totalLength);
-            headers.add("Content-Type", requestFile.getFileType());
-
-            for (String key: headers.keySet()) {
-                for (String value : headers.get(key)) {
-                    con.setRequestProperty(key, value);
-                }
-            }
-            logger.info("" + con.getRequestProperties());
-
-            try (DataOutputStream wr = new DataOutputStream(con.getOutputStream())) {
-                wr.write(requestFile.getFileContent());
-                wr.flush();
-            }
-
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()))) {
-                String output;
-                while ((output = in.readLine()) != null) {
-                    response.append(output);
-                }
-            }
-            logger.info("doRequest successfully completed");
-        }
-
-        catch (IOException e) {
-            logger.error("doRequest failed: " + e);
-            throw new RuntimeException(e);
-        }
-        finally {
-            if (con!=null) con.disconnect();
-        }
-
-        logger.info("doRequest successfully completed");
-        String responseStr = response.toString();
-
-        logger.info(responseStr);
-        return responseStr;
-    }
-    */
 }
-
-
-

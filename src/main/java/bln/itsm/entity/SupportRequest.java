@@ -16,6 +16,13 @@ import java.util.List;
 @EqualsAndHashCode(of= {"id"})
 @Entity
 @Table(name = "itsm_support_requests_interface")
+
+@NamedStoredProcedureQueries({
+    @NamedStoredProcedureQuery(
+        name = "SupportRequest.updateStatuses",
+        procedureName = "sap_interface.itsm_out_update"
+    )
+})
 public class SupportRequest {
     @Id
     private Long id;
