@@ -39,7 +39,7 @@ public class ScheduledTasks {
             logger.info("Sending requests, count of records: " + list.size());
             for (SupportRequest req : list)
                 sendRequestQuery(req);
-            supportRequestRepo.updateStatuses();
+            updateStatuses();
         }
 
         List<SupportRequestFile> fileList = supportRequestFileRepo.findByStatus(BatchStatusEnum.W);
@@ -47,7 +47,7 @@ public class ScheduledTasks {
             logger.info("Sending request files, count of records: " + fileList.size());
             for (SupportRequestFile file : fileList)
                 sendFile(file);
-            supportRequestRepo.updateStatuses();
+            updateStatuses();
         }
 
         List<Evaluation> listEval = evaluationRepo.findByTransferStatus(BatchStatusEnum.W);
@@ -124,7 +124,6 @@ public class ScheduledTasks {
         try {
             ResponseEntity<String> response = restClient.fileUpload(rf);
             responseBody = response.getBody();
-
             if (response.getStatusCodeValue() == 200) {
                 msg = "";
                 status = BatchStatusEnum.C;
@@ -162,7 +161,6 @@ public class ScheduledTasks {
         try {
             RatingRequestDto insertQuery = eval.buildRatingQuery();
             ResponseEntity<String> response = restClient.request(insertQuery);
-
             responseBody = response.getBody();
             if (response.getStatusCodeValue() == 200) {
                 msg = "";
@@ -187,5 +185,10 @@ public class ScheduledTasks {
             logger.error(msg);
         }
         evaluationRepo.save(eval);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void updateStatuses() {
+        supportRequestRepo.updateStatuses();
     }
 }
