@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of= {"id"})
 @Entity
 @Table(name = "itsm_service_interface")
-public class Request {
+public class ActionRequest {
 
     @Id
     @SequenceGenerator(name="itsm_service_interface_s", sequenceName = "itsm_service_interface_s", allocationSize=1)

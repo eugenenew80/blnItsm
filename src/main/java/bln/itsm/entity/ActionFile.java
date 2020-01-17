@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of= {"id"})
 @Entity
 @Table(name = "itsm_file_interface")
-public class RequestFile {
+public class ActionFile {
     @Id
     @SequenceGenerator(name="itsm_file_interface_s", sequenceName = "itsm_file_interface_s", allocationSize=1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "itsm_file_interface_s")
@@ -37,5 +37,5 @@ public class RequestFile {
 
     @ManyToOne
     @JoinColumn(name = "service_interface_id")
-    private Request request;
+    private ActionRequest actionRequest;
 }

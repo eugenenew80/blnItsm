@@ -5,7 +5,7 @@
           http://dozer.sourceforge.net/schema/beanmapping.xsd">
 
   <mapping map-null="false" map-empty-string="false" trim-strings="true">
-    <class-a>bln.itsm.entity.Request</class-a>
+    <class-a>bln.itsm.entity.ActionRequest</class-a>
     <class-b>bln.itsm.web.dto.RequestSuspenseDto</class-b>
 
     <field>
