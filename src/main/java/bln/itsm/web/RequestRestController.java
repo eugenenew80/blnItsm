@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.dozer.DozerBeanMapper;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,7 @@ public class RequestRestController {
     private final RequestFileRepo requestFileRepo;
     private final DozerBeanMapper mapper;
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @PostMapping(value = "/api/v1/itsm/requests/take", produces = "application/json")
     public ResponseEntity<Void> take(@RequestBody RequestTakeDto requestDto) {
         Request request = mapper.map(requestDto, Request.class);
@@ -39,12 +42,15 @@ public class RequestRestController {
             request.setStatus(BatchStatusEnum.W);
             request.setCreateDate(now());
         }
+        request.setIsTransferred(false);
 
-        repo.save(request);
+        saveRequest(request);
+        updateStatuses();
         return ResponseEntity.ok()
             .build();
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @PostMapping(value = "/api/v1/itsm/requests/suspense", produces = "application/json")
     public ResponseEntity<Void> suspense(@RequestBody RequestSuspenseDto requestDto) {
         Request request = mapper.map(requestDto, Request.class);
@@ -59,12 +65,15 @@ public class RequestRestController {
             request.setStatus(BatchStatusEnum.W);
             request.setCreateDate(now());
         }
+        request.setIsTransferred(false);
 
-        repo.save(request);
+        saveRequest(request);
+        updateStatuses();
         return ResponseEntity.ok()
             .build();
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @PostMapping(value = "/api/v1/itsm/requests/complete", produces = "application/json")
     public ResponseEntity<Void> complete(@RequestBody RequestCompleteDto requestDto) {
         Request request = mapper.map(requestDto, Request.class);
@@ -79,6 +88,8 @@ public class RequestRestController {
             request.setStatus(BatchStatusEnum.W);
             request.setCreateDate(now());
         }
+        request.setIsTransferred(false);
+        saveRequest(request);
 
         //Получаем список файлов
         List<RequestFile> requestFiles = new ArrayList<>();
@@ -94,13 +105,27 @@ public class RequestRestController {
                 requestFiles.add(file);
             }
         }
+        saveFiles(requestFiles);
 
-        //Сохраняем данные
-        repo.save(request);
-        if (requestFiles.size() > 0)
-            requestFileRepo.save(requestFiles);
-
+        updateStatuses();
         return ResponseEntity.ok()
             .build();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void saveRequest(Request request) {
+        repo.save(request);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void saveFiles(List<RequestFile> files) {
+        if (files.size() == 0)
+            return;
+        requestFileRepo.save(files);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void updateStatuses() {
+        repo.updateStatuses();
     }
 }

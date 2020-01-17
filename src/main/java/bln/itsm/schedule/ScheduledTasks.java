@@ -98,6 +98,7 @@ public class ScheduledTasks {
 
         r.setLastUpdateDate(LocalDateTime.now());
         r.setStatus(status);
+        r.setIsTransferred(false);
         if (status == BatchStatusEnum.C) {
             r.setGuid(responseBody.getId());
             logger.info("OK!");

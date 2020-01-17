@@ -1,5 +1,6 @@
 package bln.itsm.entity;
 
+import bln.itsm.converter.jpa.BooleanToIntConverter;
 import bln.itsm.entity.enums.BatchStatusEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -40,6 +41,10 @@ public class Request {
 
     @Column(name = "renewal_date")
     private LocalDateTime renewalDate;
+
+    @Column(name = "is_transferred")
+    @Convert(converter = BooleanToIntConverter.class)
+    private Boolean isTransferred;
 
     @Column(name="status")
     @Enumerated(EnumType.STRING)

@@ -5,6 +5,7 @@ import bln.itsm.client.ParameterDto;
 import bln.itsm.client.query.QueryColumnValueDto;
 import bln.itsm.client.query.QueryItemDto;
 import bln.itsm.client.query.QueryRequestDto;
+import bln.itsm.converter.jpa.BooleanToIntConverter;
 import bln.itsm.entity.enums.BatchStatusEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -47,6 +48,10 @@ public class SupportRequest {
 
     @Column(name = "itsm_req_num")
     private String requestNumber;
+
+    @Column(name = "is_transferred")
+    @Convert(converter = BooleanToIntConverter.class)
+    private Boolean isTransferred;
 
     @Column(name="transferred_to_itsm_state")
     @Enumerated(EnumType.STRING)
