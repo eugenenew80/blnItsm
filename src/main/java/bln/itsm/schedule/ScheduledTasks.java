@@ -4,11 +4,11 @@ import bln.itsm.client.query.QueryRequestDto;
 import bln.itsm.client.query.QueryResponseDto;
 import bln.itsm.client.RestClient;
 import bln.itsm.client.rating.RatingRequestDto;
-import bln.itsm.entity.Evaluation;
+import bln.itsm.entity.Rating;
 import bln.itsm.entity.SupportRequest;
 import bln.itsm.entity.SupportRequestFile;
 import bln.itsm.entity.enums.BatchStatusEnum;
-import bln.itsm.repo.EvaluationRepo;
+import bln.itsm.repo.RatingRepo;
 import bln.itsm.repo.SupportRequestFileRepo;
 import bln.itsm.repo.SupportRequestRepo;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ public class ScheduledTasks {
     private final RestClient restClient;
     private final SupportRequestRepo supportRequestRepo;
     private final SupportRequestFileRepo supportRequestFileRepo;
-    private final EvaluationRepo evaluationRepo;
+    private final RatingRepo ratingRepo;
 
     @Scheduled(cron = "*/15 * * * * *")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -50,17 +50,17 @@ public class ScheduledTasks {
             updateStatuses();
         }
 
-        List<Evaluation> listEval = evaluationRepo.findByTransferStatus(BatchStatusEnum.W);
-        if (listEval.size() > 0) {
-            logger.info("Sending ratings, count of records: " + listEval.size());
-            for (Evaluation eval : listEval)
+        List<Rating> listRatings = ratingRepo.findByTransferStatus(BatchStatusEnum.W);
+        if (listRatings.size() > 0) {
+            logger.info("Sending ratings, count of records: " + listRatings.size());
+            for (Rating eval : listRatings)
                 sendRatingQuery(eval);
         }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private void sendRequestQuery(SupportRequest r) {
-        logger.info("Sending request query: " + r.getId());
+    private void sendRequestQuery(SupportRequest req) {
+        logger.info("Sending request query: " + req.getId());
 
         String msg;
         BatchStatusEnum status;
@@ -70,7 +70,7 @@ public class ScheduledTasks {
         //sending request
         ResponseEntity<String> response;
         try {
-            QueryRequestDto insertQuery = r.buildRequestQuery();
+            QueryRequestDto insertQuery = req.buildRequestQuery();
             response = restClient.request(insertQuery);
             String responseBodyStr = response.getBody();
             if (response.getStatusCodeValue() == 200) {
@@ -96,24 +96,24 @@ public class ScheduledTasks {
             status =  BatchStatusEnum.E;
         }
 
-        r.setLastUpdateDate(LocalDateTime.now());
-        r.setStatus(status);
-        r.setIsTransferred(false);
+        req.setLastUpdateDate(LocalDateTime.now());
+        req.setStatus(status);
+        req.setIsTransferred(false);
         if (status == BatchStatusEnum.C) {
-            r.setGuid(responseBody.getId());
+            req.setGuid(responseBody.getId());
             logger.info("OK!");
         }
         else {
             logger.error("Error during sending request");
             logger.error(msg);
         }
-        supportRequestRepo.save(r);
+        supportRequestRepo.save(req);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private void sendFile(SupportRequestFile rf) {
-        logger.info("Sending file: " + rf.getId());
-        SupportRequest r = rf.getSupportRequest();
+    private void sendFile(SupportRequestFile file) {
+        logger.info("Sending file: " + file.getId());
+        SupportRequest r = file.getSupportRequest();
         if (r.getStatus() != BatchStatusEnum.C || r.getGuid() == null)
             return;
 
@@ -122,7 +122,7 @@ public class ScheduledTasks {
         String responseBody;
 
         try {
-            ResponseEntity<String> response = restClient.fileUpload(rf);
+            ResponseEntity<String> response = restClient.fileUpload(file);
             responseBody = response.getBody();
             if (response.getStatusCodeValue() == 200) {
                 msg = "";
@@ -138,20 +138,20 @@ public class ScheduledTasks {
             status =  BatchStatusEnum.E;
         }
 
-        rf.setLastUpdateDate(LocalDateTime.now());
-        rf.setStatus(status);
+        file.setLastUpdateDate(LocalDateTime.now());
+        file.setStatus(status);
         if (status == BatchStatusEnum.C)
             logger.info("OK!");
         else {
             logger.error("Error during sending request");
             logger.error(msg);
         }
-        supportRequestFileRepo.save(rf);
+        supportRequestFileRepo.save(file);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    private void sendRatingQuery(Evaluation eval) {
-        logger.info("Sending rating query: " + eval.getRequestNumber());
+    private void sendRatingQuery(Rating rating) {
+        logger.info("Sending rating query: " + rating.getRequestNumber());
 
         String msg;
         BatchStatusEnum status;
@@ -159,7 +159,7 @@ public class ScheduledTasks {
 
         //send request
         try {
-            RatingRequestDto insertQuery = eval.buildRatingQuery();
+            RatingRequestDto insertQuery = rating.buildRatingQuery();
             ResponseEntity<String> response = restClient.request(insertQuery);
             responseBody = response.getBody();
             if (response.getStatusCodeValue() == 200) {
@@ -176,15 +176,15 @@ public class ScheduledTasks {
             status =  BatchStatusEnum.E;
         }
 
-        eval.setLastUpdateDate(LocalDateTime.now());
-        eval.setTransferStatus(status);
+        rating.setLastUpdateDate(LocalDateTime.now());
+        rating.setTransferStatus(status);
         if (status == BatchStatusEnum.C)
             logger.info("OK!");
         else {
             logger.error("Error during sending request");
             logger.error(msg);
         }
-        evaluationRepo.save(eval);
+        ratingRepo.save(rating);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

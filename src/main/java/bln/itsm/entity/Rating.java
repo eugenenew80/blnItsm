@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 @EqualsAndHashCode(of= {"id"})
 @Entity
 @Table(name = "itsm_evaluation_interface")
-public class Evaluation {
+public class Rating {
     @Id
     private Long id;
 
