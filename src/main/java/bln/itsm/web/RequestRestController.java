@@ -4,7 +4,7 @@ import bln.itsm.entity.ActionRequest;
 import bln.itsm.entity.ActionFile;
 import bln.itsm.entity.enums.BatchStatusEnum;
 import bln.itsm.repo.ActionFileRepo;
-import bln.itsm.repo.ActionRepo;
+import bln.itsm.repo.ActionRequestRepo;
 import bln.itsm.web.dto.RequestCompleteDto;
 import bln.itsm.web.dto.RequestFileDto;
 import bln.itsm.web.dto.RequestSuspenseDto;
@@ -23,7 +23,7 @@ import static java.time.LocalDateTime.now;
 @RestController
 @RequiredArgsConstructor
 public class RequestRestController {
-    private final ActionRepo actionRepo;
+    private final ActionRequestRepo actionRepo;
     private final ActionFileRepo actionFileRepo;
     private final DozerBeanMapper mapper;
 

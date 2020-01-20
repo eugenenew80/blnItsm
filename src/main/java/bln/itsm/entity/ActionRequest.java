@@ -11,8 +11,13 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(of= {"id"})
 @Entity
 @Table(name = "itsm_service_interface")
+@NamedStoredProcedureQueries({
+    @NamedStoredProcedureQuery(
+        name = "ActionRequest.updateStatuses",
+        procedureName = "sap_interface.itsm_in_update"
+    )
+})
 public class ActionRequest {
-
     @Id
     @SequenceGenerator(name="itsm_service_interface_s", sequenceName = "itsm_service_interface_s", allocationSize=1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "itsm_service_interface_s")

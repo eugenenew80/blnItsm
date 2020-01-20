@@ -9,9 +9,9 @@ import javax.transaction.Transactional;
 
 @Repository
 @Transactional
-public interface ActionRepo extends JpaRepository<ActionRequest, Long> {
+public interface ActionRequestRepo extends JpaRepository<ActionRequest, Long> {
     ActionRequest findByRequestNumberAndStatus(String requestNumber, BatchStatusEnum status);
 
-    @Procedure(name = "Request.updateStatuses")
+    @Procedure(name = "ActionRequest.updateStatuses")
     void updateStatuses();
 }
