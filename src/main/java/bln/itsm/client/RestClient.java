@@ -72,6 +72,7 @@ public class RestClient {
 
         //headers
         HttpHeaders headers = headers(loginResponse);
+        headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
 
         //body
         ObjectMapper mapper = new ObjectMapper();
@@ -163,7 +164,6 @@ public class RestClient {
 
     private HttpHeaders headers(ResponseEntity<String> loginResponse) {
         HttpHeaders queryHeaders = new HttpHeaders();
-        queryHeaders.setContentType(MediaType.APPLICATION_JSON);
         for (String keyHeader : loginResponse.getHeaders().keySet()) {
             if ("Set-Cookie".equals(keyHeader) ) {
                 for (String cookie : loginResponse.getHeaders().get(keyHeader)) {
