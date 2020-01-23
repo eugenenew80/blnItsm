@@ -3,7 +3,6 @@ package bln.itsm.client;
 import bln.itsm.client.exc.NotAuthorizedException;
 import bln.itsm.client.exc.SendRequestException;
 import bln.itsm.client.login.LoginRequestDto;
-import bln.itsm.client.login.LoginResponseDto;
 import bln.itsm.entity.SupportRequestFile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -34,6 +33,11 @@ public class RestClient {
 
     private boolean isLogin = false;
     private ResponseEntity<String> loginResponse;
+
+    public void clearSession() {
+        isLogin = false;
+        loginResponse = null;
+    }
 
     private void login() {
         logger.info("Trying to authorization...");

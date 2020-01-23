@@ -34,6 +34,8 @@ public class ScheduledTasks {
     @Scheduled(cron = "*/15 * * * * *")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void startImport() {
+        restClient.clearSession();
+
         List<SupportRequest> list = supportRequestRepo.findByStatus(BatchStatusEnum.W);
         if (list.size() > 0) {
             logger.info("Sending requests, count of records: " + list.size());
