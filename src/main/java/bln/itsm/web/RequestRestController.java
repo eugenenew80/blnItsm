@@ -12,6 +12,8 @@ import bln.itsm.web.dto.RequestTakeDto;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.dozer.DozerBeanMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ import static java.time.LocalDateTime.now;
 @RestController
 @RequiredArgsConstructor
 public class RequestRestController {
+    private static final Logger logger = LoggerFactory.getLogger(RequestRestController.class);
     private final ActionRequestRepo actionRepo;
     private final ActionFileRepo actionFileRepo;
     private final DozerBeanMapper mapper;
@@ -54,6 +57,10 @@ public class RequestRestController {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @PostMapping(value = "/api/v1/itsm/requests/complete", produces = "application/json")
     public ResponseEntity<Void> complete(@RequestBody RequestCompleteDto requestDto) {
+        logger.debug("RequestRestController.complete started");
+        logger.trace("request body: {}", requestDto);
+        logger.trace("file counts: {}", requestDto.getFiles().size());
+
         ActionRequest actionRequest = mapper.map(requestDto, ActionRequest.class);
         buildRequest(actionRequest);
         saveRequest(actionRequest);
@@ -62,6 +69,7 @@ public class RequestRestController {
         List<ActionFile> actionFiles = new ArrayList<>();
         if (requestDto.getFiles() != null) {
             for (RequestFileDto requestFileDto : requestDto.getFiles()) {
+                logger.trace("file: {}", requestFileDto.getFileName());
                 byte[] contentAsBytes = Base64.decodeBase64(requestFileDto.getFileContentBase64());
                 ActionFile file = new ActionFile();
                 file.setActionRequest(actionRequest);
@@ -75,6 +83,7 @@ public class RequestRestController {
         saveFiles(actionFiles);
         updateStatuses();
 
+        logger.debug("RequestRestController.complete completed");
         return ResponseEntity.ok()
             .build();
     }
@@ -102,6 +111,8 @@ public class RequestRestController {
     private void saveFiles(List<ActionFile> files) {
         if (files.size() == 0)
             return;
+
+        logger.trace("saving files, count: {}", files.size());
         actionFileRepo.save(files);
     }
 
