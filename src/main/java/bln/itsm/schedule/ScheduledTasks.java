@@ -31,7 +31,7 @@ public class ScheduledTasks {
     private final SupportRequestFileRepo supportRequestFileRepo;
     private final RatingRepo ratingRepo;
 
-    @Scheduled(cron = "*/15 * * * * *")
+    //@Scheduled(cron = "*/15 * * * * *")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void startImport() {
         restClient.clearSession();
