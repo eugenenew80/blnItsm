@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -23,9 +24,16 @@ import java.util.UUID;
 @Service
 public class RestClient {
     private static final Logger logger = LoggerFactory.getLogger(RestClient.class);
-    private static String user = "temp40a";
-    private static String password = "Q1w2e3r4t%777";
-    private static String baseUrl = "http://itsm-app-2.corp.kegoc.kz";
+
+    @Value( "${itsm.server}" )
+    private String baseUrl;
+
+    @Value( "${itsm.username}" )
+    private String user;
+
+    @Value( "${itsm.password}" )
+    private String password;
+
     private static String loginUrlSeg = "/ServiceModel/AuthService.svc/Login";
     private static String queryUrlSeg = "/0/dataservice/json/reply/InsertQuery";
     private static String uploadUrlSeg = "/0/rest/FileApiService/Upload";
@@ -41,6 +49,10 @@ public class RestClient {
 
     private void login() {
         logger.info("Trying to authorization...");
+        logger.info("server: {}", baseUrl);
+        logger.info("username: {}", user);
+        logger.info("password: {}", password);
+
         this. isLogin = false;
         this.loginResponse = null;
 
